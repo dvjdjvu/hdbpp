@@ -1,6 +1,6 @@
 ## Что такое [HDB++](https://www.tango-controls.org/community/project-docs/hdbplusplus/)?
 Это система архивирования TANGO, позволяет сохранять данные полученные с устройств в системе TANGO.
-Здесь будет описана работа с Linux([**TangoBox 9.3**](https://s2innovation.sharepoint.com/:f:/s/Developers/EovD2IBwhppAp-ZLXtawQ6gB9F6aXPPs2msr2hgPGTO-FQ?e=Ii3tnr) на основе Ubuntu 18.04), это уже готовая система где все настроено.
+Здесь будет описана работа с Linux ([**TangoBox 9.3**](https://s2innovation.sharepoint.com/:f:/s/Developers/EovD2IBwhppAp-ZLXtawQ6gB9F6aXPPs2msr2hgPGTO-FQ?e=Ii3tnr) на основе Ubuntu 18.04), это уже готовая система где все настроено.
 
 ## О чем статья?
  - Архитектура системы.
@@ -8,9 +8,10 @@
 
 ## Для чего это нужно?
 Позволяет хранить историю показаний Вашего оборудования.
-
  - Вам не нужно думать о том как хранить данные в БД.
  - Нужно только указать какие атрибуты с какого оборудования архивировать.
+
+<cut/>
 
 ## Где взять?
  - [**deb && sql**](https://www.tango-controls.org/community/project-docs/hdbplusplus/hdbplusplus-downloads/)
@@ -63,10 +64,9 @@ jive
 
 ![image](https://habrastorage.org/webt/gq/li/qa/gqliqanb2roaz98yqhl0b4lxhkk.jpeg)
 
-Управнее этим Device Server-ом осуществляется через утилиту **HDB++ Configuration**, это графическая утилита которая отправляет выше показанные команды в **archiving/hdbpp/eventsubscriber.1**. Дальше будут привидены примеры как программно управлять им.
+Управнее этим Device Server-ом осуществляется через утилиту **HDB++ Configuration**, это графическая утилита которая отправляет выше показанные команды в **archiving/hdbpp/eventsubscriber.1**. Дальше будет показано как делать это программно.
 
 ## HDB++ Configuration
-
 ```bash
 hdbpp-configurator -configure
 ```
@@ -82,8 +82,6 @@ hdbpp-configurator -configure
  - **relative change** - изменение атрибута в процентах.
  - **event period** - если значения изменились, то записывать каждые мс.
  - **Attibute polling period** - записывать каждые мс.
-
-Далее будет показано как делать все это программно, из-за этого и пришлось вникать в этот вопрос столь глубоко.
 
 ## Archiving DB
 В ней нас будет интересовать БД **hdbpp**:
@@ -108,16 +106,13 @@ FLUSH PRIVILEGES;
 
 Есть официальная библиотека для python**2.7** для работы с HDB++ [PyTangoArchiving](https://github.com/tango-controls/PyTangoArchiving). Разобраться с ней удалось только когда написал свою библиотеку. По ней не хватает документации, что передается в методы, какие типы данных, что передавать в аргументах (**Это мое мнение**).
 
-Это **модуль** создан для версии **3.7**. Здесь все стандартные настройки для работы на **TangoBox 9.3** заданы по умолчанию.
+Мой **модуль** создан для версии **3.7**. Здесь все стандартные настройки для работы на **TangoBox 9.3** заданы по умолчанию.
 
 ### Установка модуля
-
 ```bash
 sudo python3.7 setup.py install
 ```
-
 Зависимости:
-
  - **mysql-connector**>=2.2.9
  - **pytango**>=9.3.2
  - **distribute**>=0.7.3
@@ -146,9 +141,14 @@ if __name__ == '__main__':
     hdbpp.archiving_add(['tango://tangobox:10000/ECG/ecg/1/Lead'])
 
     # Начать архивацию атрибута
-    hdbpp.archiving_start('tango://tangobox:10000/ECG/ecg/1/Lead')
-
-    # Остановить архивацию атрибута
+    hdbpp.archiving_start('tango://tangobox:10000/ECG/ecg/1/Lead', 10 * 60 * 1000, 5 * 60 * 1000, 2, 1)
+    # где:
+    # 10 * 60 * 1000 - опрашивать и архивировать атрибут каждые мс
+    # 5 * 60 * 1000 - архивировать атрибут каждые мс, если значение вышло за порог
+    # 2 - порог изменения атрибута в единицах
+    # 1 - порог изменения атрибута в процентах
+ 
+   # Остановить архивацию атрибута
     hdbpp.archiving_stop('tango://tangobox:10000/ECG/ecg/1/Lead')
     
     # Закрыть соединение
@@ -156,3 +156,8 @@ if __name__ == '__main__':
 ```
 
 Более подробная документация в коде.
+Ее можно посмотреть например так:
+
+```bash
+pydoc3.7 hdbpp.HDBPP
+```
