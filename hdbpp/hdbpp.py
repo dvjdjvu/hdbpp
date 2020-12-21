@@ -54,7 +54,7 @@ class HDBPP():
         Поставить на паузу арихирование атрибута
     archiving_remove(attr)
         Удалить атрибут с СА
-    archiving_start(attr)
+    archiving_start(attr, period, archive_period, archive_abs_change, archive_rel_change)
         Начать архивирование атрибута
     archiving_status(attr)
         Статус архивирования атрибута
@@ -655,9 +655,9 @@ class HDBPP():
             
         attr_conf = ap.get_config()
                 
-        attr_conf.events.arch_event.archive_period = archive_period
-        attr_conf.events.arch_event.archive_abs_change = archive_abs_change
-        attr_conf.events.arch_event.archive_rel_change = archive_rel_change
+        attr_conf.events.arch_event.archive_period = str(archive_period)
+        attr_conf.events.arch_event.archive_abs_change = str(archive_abs_change)
+        attr_conf.events.arch_event.archive_rel_change = str(archive_rel_change)
             
         ap.set_config(attr_conf)
         
@@ -714,4 +714,3 @@ if __name__ == '__main__':
     #print(ret)
 
     hdbpp.close()
-    
