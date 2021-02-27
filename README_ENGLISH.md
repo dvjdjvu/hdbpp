@@ -1,5 +1,3 @@
-<img alt="main" width="800" src="https://habrastorage.org/webt/tu/vr/ec/tuvrecn2a_yv1mikcfb39r9hlfa.png" align = "center"/>
-
 ## What is [HDB++](https://www.tango-controls.org/community/project-docs/hdbplusplus/)?
 This is a TANGO archiving system, allows you to save data received from devices in the TANGO system.
 
