@@ -1,4 +1,4 @@
-#!/usr/bin/python3.7
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import re
@@ -9,167 +9,165 @@ from tango import Database, DbDevInfo, DeviceProxy, DeviceAttribute, AttributePr
 
 class HDBPP():
     """
-    Класс HDBPP используется для упрвления сервером архивацией и получения 
-    истории архивирования атрибутов устройств tangoю
-    
-    Note:
-        По умолчанию заданны настройки для работы на дистрибутиве TangoBox 9.3
-    
+     The HDBPP class is used to manage the archive server and receive
+     archiving history of tango device attributes
+
+     Note:
+         The default settings are set to work on the TangoBox 9.3 distribution
+
     Attributes
     ----------
-    host: str
-        ip адрес базы сервера истории(СИ)
-    user: str
-        имя пользователя для подключения к СИ
-    password: str
-        пароль пользователя для подключения к СИ
-    database: str
-        имя базы на СИ, где хранится история
-    archive_server_name: str
-        имя Device Server-а tango(сервера архивации(СА)), который записывает историю
-    server_default: str
-        адрес сервера на котором работают архивируемые Device Server-а
-        
+     host: str
+         history server base ip address (SI)
+     user: str
+         username to connect to SI
+     password: str
+         user password for connecting to SI
+     database: str
+         the name of the base in SI where the history is stored
+     archive_server_name: str
+         the name of the tango Device Server (Archive Server (CA)) that records history
+     server_default: str
+         the address of the server on which the archived Device Servers are running
+
     Methods
     -------
-    attr_set_server(attr)
-        Добавляет к атрибуту адрес сервера на котором он работает
-    connect()
-        Подключиться к СИ и СА
-    connect_to_hdbpp()
-        Подключиться к СИ
-    connect_to_archive_server()
-        Подключиться к СА
-    close()
-        Отключиться от СИ
-    get_att_conf(attr)
-        Получить информацию об атрибуте с СИ
-    get_data_type(att_conf_data_type_id)
-        Получить тип атрибута
-    get_archive(attr, date_from, date_to)
-        Получить историю сохрания атрибута
-    archiving_add(attrs)
-        Добавить атрибуты на СА
-    archiving_pause(attr)
-        Поставить на паузу арихирование атрибута
-    archiving_remove(attr)
-        Удалить атрибут с СА
-    archiving_start(attr, period, archive_period, archive_abs_change, archive_rel_change)
-        Начать архивирование атрибута
-    archiving_status(attr)
-        Статус архивирования атрибута
-    archiving_stop(attr)
-        Остановить архивирование атрибута
-    archiving_set_strategy(attr, strategy)
-        Установить стратегию архивирования атрибута
-    archiving_set_ttl(attr, ttl)
-        Установить кол-во дней архивирования атрибута
-    archiving_get_strategy(attr)
-        Получить стратегию архивирования атрибута
-    archiving_get_ttl(attr)
-        Получить кол-во дней архивирования атрибута
-    attr_is_archiving(attr)
-        Узнать архивируется ли атрибут.
-    attr_set_period(attr, period, archive_period, archive_abs_change, archive_rel_change)
-        Установка параметров архивирования атрибута.
-    def attr_get_period(attr)
-        Получение параметров архивирования атрибута.
+    attr_set_server (attr)
+        Adds to the attribute the address of the server it is running on
+    connect ()
+        Connect to SI and CA
+    connect_to_hdbpp ()
+        Connect to SI
+    connect_to_archive_server ()
+        Connect to CA
+    close ()
+        Disconnect from SI
+    get_att_conf (attr)
+        Get attribute information from SI
+    get_data_type (att_conf_data_type_id)
+        Get attribute type
+    get_archive (attr, date_from, date_to)
+        Get the history of an attribute's persistence
+    archiving_add (attrs)
+        Add attributes to CA
+    archiving_pause (attr)
+        Pause attribute archiving
+    archiving_remove (attr)
+        Remove attribute from CA
+    archiving_start (attr, period, archive_period, archive_abs_change, archive_rel_change)
+        Start Archiving Attribute
+    archiving_status (attr)
+        Attribute archiving status
+    archiving_stop (attr)
+        Stop archiving an attribute
+    archiving_set_strategy (attr, strategy)
+        Set an attribute archiving strategy
+    archiving_set_ttl (attr, ttl)
+        Set the number of days to archive an attribute
+    archiving_get_strategy (attr)
+        Get an Attribute Archiving Strategy
+    archiving_get_ttl (attr)
+        Get the number of days the attribute was archived
+    attr_is_archiving (attr)
+        Find out if the attribute is being archived.
+    attr_set_period (attr, period, archive_period, archive_abs_change, archive_rel_change)
+        Setting the parameters for archiving the attribute.
+    def attr_get_period (attr)
+        Retrieving archive parameters for an attribute.
     """
-    
-    def __init__(self, host="172.18.0.7", user="root", password="tango", database="hdbpp", 
-                        archive_server_name="archiving/hdbpp/eventsubscriber.1",
-                        server_default = "tango://tangobox:10000"):
+
+    def __init__(self, host = "archiver-maria-db", user = "tango", password = "tango", database = "hdbpp", archive_server_name = "archiving/hdbpp/eventsubscriber.1", server_default = "tango://databaseds:10000"):
         """
-        Конструктор класса. Устанавливаем все необходимые атрибуты для объекта HDBPP
-        
-        Parameters
-        ----------
-        host: str
-            ip адрес базы сервера истории(СИ)
-        user: str
-            имя пользователя для подключения к СИ
-        password: str
-            пароль пользователя для подключения к СИ
-        database: str
-            имя базы на СИ, где хранится история
-        archive_server_name: str
-            имя Device Server-а tango(сервера архивации(СА)), который записывает историю
-        server_default: str
-            адрес сервера на котором работают архивируемые Device Server-а
-        """
-        
+        Class constructor. Set all the necessary attributes for the HDBPP object
+
+         Parameters
+         ----------
+         host: str
+             history server base ip address (SI)
+         user: str
+             username to connect to SI
+         password: str
+             user password for connecting to SI
+         database: str
+             the name of the base in SI where the history is stored
+         archive_server_name: str
+             the name of the tango Device Server (Archive Server (CA)) that records history
+         server_default: str
+             the address of the server on which the archived Device Servers are running
+         """
+
         self.cnx = None
         self.archive_server = None
-        
+
         self.host = host
         self.user = user
         self.password = password
         self.database = database
         self.archive_server_name = archive_server_name
-        
-        # "tango://tangobox:10000" сервер по умолчанию, на котором работают наши сервера
+
+        # "tango: // tangobox: 10000" is the default server that our servers run on
         self.server_default = server_default
-        
+
     def __del__(self):
         """
-        Деструктор класса. Закрываем соединения, если забыли это сделать.
+        Class destructor. Close connections if you forgot to do this.
         """
-        
+
         if self.cnx :
             self.close()
-                    
-    # Если у атрибута не указан сервер на котором он работает, до добавляем сервер по умолчанию.
+
+    # If the attribute does not have the server on which it is running, add the default server before.
     def attr_set_server(self, attr):
         """
-        Добавляем к атрибуту адрес сервер на котором он работает, если сервер не указан. 
-        
+        Add to the attribute the address of the server on which it works, if the server is not specified.
+
         Parameters
         ----------
         attr: str
-            имя атрибута
-            
+            attribute name
+
         Returns
         -------
         str
-            адрес и имя атриба, например tango://tangobox:10000/ECG/ecg/1/Lead
+            the address and name of the attribute, for example tango://tangobox:10000/ECG/ecg/1/Lead
         """
-        
+
         if "tango://" in attr :
             return attr
-        
+
         if (attr[0] != '/') :
             attr = '/' + attr
-        
+
         return self.server_default + attr
-    
+
     def connect(self):
         """
-        Подключиться к СИ и СА
-            
+        Connect to SI and CA
+
         Returns
         -------
         bool
-            True в случае успеха, иначе False
+            True if successful, otherwise False
         """
-        
+
         if self.connect_to_hdbpp() == False :
             return False
-        
+
         if self.connect_to_archive_server() == False :
             return False
-        
+
         return True
-    
+
     def connect_to_hdbpp(self):
         """
-        Подключиться к СИ
-            
+        Connect to SI
+
         Returns
         -------
         bool
-            True в случае успеха, иначе False
+            True if successful, otherwise False
         """
-        
+
         try:
             self.cnx = mysql.connector.connect(host = self.host, user = self.user, password = self.password, database = self.database)
         except mysql.connector.Error as err:
@@ -177,179 +175,179 @@ class HDBPP():
             return False
 
         return True
-    
+
     def connect_to_archive_server(self):
         """
-        Подключиться к СА
-            
+        Connect to CA
+
         Returns
         -------
         bool
-            True в случае успеха, иначе False
+            True if successful, otherwise False
         """
-        
+
         try:
             self.archive_server = DeviceProxy(self.archive_server_name)
         except DevFailed as err:
             print("[error]: Failed to create proxy to {}: {}".format(self.archive_server_name, err))
             return False
-        
+
         return True
-    
+
     def close(self):
         """
-        Закрыть соединение с СИ.
+        Close connection to SI.
         """
-        
+
         if self.cnx :
             self.cnx.close()
             self.cnx = None
-        
+
     def get_att_conf(self, attr):
         """
-        Получить информацию об атрибуте с СИ. Необходима для взятия архива.
-        
+        Get information about an attribute from SI. Required to take the archive.
+
         Parameters
         ----------
         attr: str
-            имя атрибута
-            
+            attribute name
+
         Returns
         -------
         arr
-            Массив с информацией об устройстве с СИ. Поля из таблицы att_conf
+            Array with information about the device with SI. Fields from att_conf table
         None
-            в случае ошибки
+            in case of error
         """
-        
+
         attr = self.attr_set_server(attr)
-        
+
         cursor = self.cnx.cursor()
-        
+
         sql = "SELECT * FROM att_conf WHERE att_name RLIKE '{0}' LIMIT 0,1".format(attr)
 
         cursor.execute(sql)
-                
+
         result = cursor.fetchall()
 
         if len(result) == 0 :
             return None
         else :
             return result[0]
-        
+
     def get_data_type(self, att_conf_data_type_id):
         """
-        Получить строковый тип данных атрибута, по числовому идентификатору типа данных.
-        
+        Get the string data type of an attribute, by the numeric data type identifier.
+
         Parameters
         ----------
         att_conf_data_type_id: int
-            тип данных атрибута
-            
+            attribute data type
+
         Returns
         -------
         str
-            строковый тип данных атрибута, например scalar_devushort_ro
+            the string data type of the attribute, such as scalar_devushort_ro
         None
-            в случае ошибки
+            in case of error
         """
-        
+
         cursor = self.cnx.cursor()
-        
+
         sql = "SELECT data_type FROM att_conf_data_type WHERE att_conf_data_type_id = {0} LIMIT 0,1".format(att_conf_data_type_id)
         cursor.execute(sql)
-                
+
         result = cursor.fetchall()
-        
+
         if len(result) == 0 :
             return None
         else :
             return result[0]
-               
+
     def get_archive(self, attr, date_from = None, date_to = None):
         """
-        Получить историю сохранения атрибута.
-        
+        Get the history of saving an attribute.
+
         Note:
-            С параметрами по умолчанию берет историю за все время
-        
+            With default parameters takes history for all time
+
         Parameters
         ----------
         attr: str
-            имя атрибута
+            attribute name
         date_from: datetime
-            дата с которой взять историю
+            date from which to take history
         date_to: datetime
-            дата по которую взять историю
-        
+            date by which to take history
+
         Returns
         -------
         array
-            архив значений
+            values archive
         None
-            в случае ошибки
+            in case of error
         """
-        
+
         attr = self.attr_set_server(attr)
-        
+
         att_conf_id = 0
         att_conf_data_type_id = 0
         table = ''
-        
-        # Если (date_from && date_to) == None, то берем данные за все время
-        # Время до которого берем данные
+
+        # If (date_from && date_to) == None, then we take data for all time
+        # Time until which we take data
         if date_to == None :
-            # По умолчанию до текущего времени
+            # Default up to current time
             date_to = datetime.datetime.now()
-        
-        # Время от которого берем данные
+
+        # Time from which we take data
         if date_from == None :
-            # По умолчанию все данные
-            date_from = datetime.datetime(1, 1, 1, 0, 0, 0) 
-            
+            # By default, all data
+            date_from = datetime.datetime(1, 1, 1, 0, 0, 0)
+
         result = hdbpp.get_att_conf(attr)
         if result :
             att_conf_id = result[0]
             att_conf_data_type_id = result[2]
         else:
             return None
-        
-        # Получаем тип данных, по нему узнаем в какой таблице хранится история.
+
+        # Get the data type, use it to find out in which table the history is stored.
         result = self.get_data_type(att_conf_data_type_id)
         if result :
             table = "att_" + str(result[0])
         else:
             return None
-        
+
         cursor = self.cnx.cursor()
         sql = "SELECT * FROM {0} WHERE att_conf_id = {1} and (insert_time >= '{2}' and insert_time <= '{3}')".format(table, att_conf_id, date_from, date_to)
-        
+
         cursor.execute(sql)
-                
+
         result = cursor.fetchall()
         if len(result) == 0 :
             return None
         else :
             return result
-    
+
     def archiving_add(self, attrs):
         """
-        Добавить атрибуты на СА. Необходимо сделать если его нет.
-        
+        Add attributes to the CA. It must be done if it is not.
+
         Parameters
         ----------
         attrs: array(str)
-            массив имен атрибутов
-        
+            array of attribute names
+
         Returns
         -------
         bool
-            True в случае успеха, иначе False
+            True if successful, otherwise False
         """
-        
+
         for i, a in enumerate(attrs):
             attrs[i] = self.attr_set_server(attrs[i])
-        
+
         argIn = DeviceData()
         argIn.insert(tango._tango.CmdArgType.DevVarStringArray, attrs)
         try:
@@ -357,24 +355,24 @@ class HDBPP():
             return True
         except tango.DevFailed as df:
             return False
-    
+
     def archiving_pause(self, attr):
         """
-        Поставить на паузу арихирование атрибута.
-        
+        Pause attribute archiving.
+
         Parameters
         ----------
         attr: str
-            имя атрибута
-        
+            attribute name
+
         Returns
         -------
         bool
-            True в случае успеха, иначе False
+            True if successful, otherwise False
         """
-        
+
         attr = self.attr_set_server(attr)
-        
+
         argIn = DeviceData()
         argIn.insert(tango._tango.CmdArgType.DevString, attr)
         try:
@@ -382,24 +380,24 @@ class HDBPP():
             return True
         except tango.DevFailed as df:
             return False
-    
+
     def archiving_remove(self, attr):
         """
-        Удалить атрибут с СА.
-        
+        Remove attribute from CA.
+
         Parameters
         ----------
         attr: str
-            имя атрибута
-        
+            attribute name
+
         Returns
         -------
         bool
-            True в случае успеха, иначе False
+            True if successful, otherwise False
         """
-        
+
         attr = self.attr_set_server(attr)
-        
+
         argIn = DeviceData()
         argIn.insert(tango._tango.CmdArgType.DevString, attr)
         try:
@@ -407,31 +405,31 @@ class HDBPP():
             return True
         except tango.DevFailed as df:
             return False
-    
+
     def archiving_start(self, attr, period = 0, archive_period = None, archive_abs_change = None, archive_rel_change = None):
         """
-        Начать архивирование атрибута.
-        
+        Start archiving the attribute.
+
         Parameters
         ----------
         attr: str
-            имя атрибута
-        
+            attribute name
+
         Returns
         -------
         bool
-            True в случае успеха, иначе False
+            True if successful, otherwise False
         """
-        
-        # Если было передано короткое имя атрибута, то преобразуем его в полное
+
+        # If a short attribute name was passed, then convert it to full
         # 'tango://tangobox:10000/ECG/ecg/1/Lead'
         attr = self.attr_set_server(attr)
-        
-        # Полное имя преобразуем в короткое
+
+        # Convert the full name to short
         # 'ECG/ecg/1/Lead'
         sp = attr.split('/')
         attr_short = sp[-4] + "/" + sp[-3] + "/" + sp[-2] + "/" + sp[-1]
-        
+
         argIn = DeviceData()
         argIn.insert(tango._tango.CmdArgType.DevString, attr)
         try:
@@ -440,25 +438,25 @@ class HDBPP():
             return True
         except tango.DevFailed as df:
             return False
-    
+
     def archiving_status(self, attr):
         """
-        Статус архивирования атрибута.
-        
+        The archiving status of the attribute.
+
         Parameters
         ----------
         attr: str
-            имя атрибута
-        
+            attribute name
+
         Returns
         -------
         bool
-            True в случае успеха, иначе False
+            True if successful, otherwise False
         """
-        
+
         attr = self.attr_set_server(attr)
         status = {}
-        
+
         argIn = DeviceData()
         argIn.insert(tango._tango.CmdArgType.DevString, attr)
         try:
@@ -466,33 +464,33 @@ class HDBPP():
         except tango.DevFailed as df:
             status["Archiving"] = False
             return status
-        
-        # Преобразуем возвращаемую строку статсусов к словарю статусов
+
+        # Convert the returned stats string to a status dictionary
         ret = ret.split("\n")
         for r in ret:
             r = re.sub(' +', ' ', r)
             r = r.split(":")
             status[r[0].lstrip().rstrip()] = r[1].lstrip().rstrip()
-            
+
         return status
-        
+
     def archiving_stop(self, attr):
         """
-        Остановить архивирование атрибута.
-        
+        Stop archiving the attribute.
+
         Parameters
         ----------
         attr: str
-            имя атрибута
-        
+            attribute name
+
         Returns
         -------
         bool
-            True в случае успеха, иначе False
+            True if successful, otherwise False
         """
-        
+
         attr = self.attr_set_server(attr)
-        
+
         argIn = DeviceData()
         argIn.insert(tango._tango.CmdArgType.DevString, attr)
         try:
@@ -500,26 +498,26 @@ class HDBPP():
             return True
         except tango.DevFailed as df:
             return False
-    
+
     def archiving_set_strategy(self, attr, strategy = "ALWAYS"):
         """
-        Установить стратегию архивирования атрибута.
-        
+        Set the archiving strategy for the attribute.
+
         Parameters
         ----------
         attr: str
-            имя атрибута
+            attribute name
         strategy: str
-            всегда ALWAYS, других стратегий нет
-        
+            always ALWAYS, no other strategies
+
         Returns
         -------
         bool
-            True в случае успеха, иначе False
+            True if successful, otherwise False
         """
-        
+
         attr = self.attr_set_server(attr)
-        
+
         argIn = DeviceData()
         argIn.insert(tango._tango.CmdArgType.DevVarStringArray, [attr, str(strategy)])
         try:
@@ -527,26 +525,26 @@ class HDBPP():
             return True
         except tango.DevFailed as df:
             return False
-    
+
     def archiving_set_ttl(self, attr, ttl):
         """
-        Установить кол-во дней архивирования атрибута.
-        
+        Set the number of days to archive the attribute.
+
         Parameters
         ----------
         attr: str
-            имя атрибута
+            attribute name
         ttl: int/str
-            кол-во дней
-        
+            number of days
+
         Returns
         -------
         bool
-           True в случае успеха, иначе False
+           True if successful, otherwise False
         """
-        
+
         attr = self.attr_set_server(attr)
-        
+
         argIn = DeviceData()
         argIn.insert(tango._tango.CmdArgType.DevVarStringArray, [attr, str(ttl)])
         try:
@@ -554,162 +552,162 @@ class HDBPP():
             return True
         except tango.DevFailed as df:
             return False
-        
+
     def archiving_get_strategy(self, attr):
         """
-        Получить стратегию архивирования атрибута.
-        
+        Get the archiving strategy for an attribute.
+
         Parameters
         ----------
         attr: str
-            имя атрибута
-        
+            attribute name
+
         Returns
         -------
         bool
-            True в случае успеха, иначе False
+            True if successful, otherwise False
         """
-        
+
         attr = self.attr_set_server(attr)
-        
+
         argIn = DeviceData()
         argIn.insert(tango._tango.CmdArgType.DevString, attr)
         try:
             return self.archive_server.command_inout("GetAttributeStrategy", argIn)
         except tango.DevFailed as df:
             return False
-        
+
     def archiving_get_ttl(self, attr):
         """
-        Получить кол-во дней архивирования атрибута.
-        
+        Get the number of days the attribute was archived.
+
         Parameters
         ----------
         attr: str
-            имя атрибута
-        
+            attribute name
+
         Returns
         -------
         int
-            кол-во дней архивирования
+            days of archiving
         bool
-            False в случае ошибки
+            False on error
         """
-        
+
         attr = self.attr_set_server(attr)
-        
+
         argIn = DeviceData()
         argIn.insert(tango._tango.CmdArgType.DevString, attr)
         try:
             return self.archive_server.command_inout("GetAttributeTTL", argIn)
         except tango.DevFailed as df:
             return False
-    
+
     def attr_is_archiving(self, attr):
         """
-        Узнать архивируется ли атрибут.
-        
+        Find out if the attribute is being archived.
+
         Parameters
         ----------
         attr: str
-            имя атрибута
-        
+            attribute name
+
         Returns
         -------
         bool
-            True если да, иначе False
+            True if yes, False otherwise
         """
-        
+
         ret = self.archiving_status(attr)
-        
+
         if ret["Archiving"] == "Started":
             return True
-        
+
         return False
-    
+
     def attr_set_period(self, attr, period = 0, archive_period = None, archive_abs_change = None, archive_rel_change = None):
         """
-        Установка параметров архивирования атрибута.
-        
+        Setting the parameters for archiving the attribute.
+
         Parameters
         ----------
         attr: str
-            имя атрибута
+            attribute name
         period: int
-            миллисекунды
+            milliseconds
         archive_period: str
-            миллисекунды, если превышен порог изменеия атрибута
+            milliseconds if attribute change threshold is exceeded
         archive_abs_change: str
-            порог изменения атрибута в еденицах
+            attribute change threshold in units
         archive_rel_change: str
-            порог изменения атрибута в процентах
+            attribute change threshold in percent
         """
-        
+
         ap = AttributeProxy(attr)
-            
+
         if (period > 0) :
-            ap.poll(period)                
+            ap.poll(period)
         else :
             if (ap.is_polled()) :
                 ap.stop_poll(attr)
-            
+
         attr_conf = ap.get_config()
-                
+
         attr_conf.events.arch_event.archive_period = str(archive_period)
         attr_conf.events.arch_event.archive_abs_change = str(archive_abs_change)
         attr_conf.events.arch_event.archive_rel_change = str(archive_rel_change)
-            
+
         ap.set_config(attr_conf)
-        
+
     def attr_get_period(self, attr):
         """
-        Получение параметров архивирования атрибута.
-        
+        Retrieving archive parameters for an attribute.
+
         Parameters
         ----------
         attr: str
-            имя атрибута
-        
+            attribute name
+
         Returns
         -------
         dict
-            Параметры архивирования
+            Archiving options
         """
-       
+
         ap = AttributeProxy(attr)
-            
+
         d = {}
         arch_event = {}
-            
+
         period = ap.get_poll_period()
         a = ap.get_config()
-            
+
         arch_event["archive_period"] = a.events.arch_event.archive_period
         arch_event["archive_abs_change"] = a.events.arch_event.archive_abs_change
         arch_event["archive_rel_change"] = a.events.arch_event.archive_rel_change
         arch_event["poll_period"] = period
-        
+
         return arch_event
-        
+
 if __name__ == '__main__':
     hdbpp = HDBPP()
-    
+
     if hdbpp.connect() == False :
         exit(0)
-    
-    archive = hdbpp.get_archive('tango://tangobox:10000/ECG/ecg/1/Lead')
+
+    archive = hdbpp.get_archive('tango://databaseds:10000/PTS/RCUSCC/1/RCU_monitor_rate_RW')
     #if archive :
     #    for a in archive :
     #        print(a[4])
-    
+
     #hdbpp.archiving_add(['tango://tangobox:10000/ECG/ecg/1/Lead'])
-    
+
     #ret = hdbpp.archiving_status('tango://tangobox:10000/ECG/ecg/1/Lead')
     #print(ret)
-    
+
     #ret = hdbpp.archiving_status('tango://tangobox:10000/ECG/ecg/1/Lead')
     #print(ret)
-    
+
     #ret = hdbpp.archiving_status('tango://tangobox:10000/ECG/ecg/1/Gain')
     #print(ret)
 
