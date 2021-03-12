@@ -33,7 +33,7 @@ Archiver is the same Device Server:
 
 ![image](https://habrastorage.org/webt/wx/bw/4c/wxbw4cyo_occntl8jparsj2drbo.jpeg)
 
-**Archiving DB** in our system is based on ** MySQL **, it is in docker **tangobox-hdbpp**.
+**Archiving DB** in our system is based on **MySQL**, it is in docker **tangobox-hdbpp**.
 
 ![image](https://habrastorage.org/webt/lx/zx/tf/lxzxtfz04nofarfshjy4jdh3hhy.jpeg)
 
