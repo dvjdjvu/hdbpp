@@ -18,15 +18,15 @@ class HDBPP():
     Attributes
     ----------
      host: str
-         history server base ip address (SI)
+         history server base ip address (HS)
      user: str
-         username to connect to SI
+         username to connect to HS
      password: str
-         user password for connecting to SI
+         user password for connecting to HS
      database: str
-         the name of the base in SI where the history is stored
+         the name of the base in HS where the history is stored
      archive_server_name: str
-         the name of the tango Device Server (Archive Server (CA)) that records history
+         the name of the tango Device Server (Archive Server (AS)) that records history
      server_default: str
          the address of the server on which the archived Device Servers are running
 
@@ -35,25 +35,25 @@ class HDBPP():
     attr_set_server (attr)
         Adds to the attribute the address of the server it is running on
     connect ()
-        Connect to SI and CA
+        Connect to HS and AS
     connect_to_hdbpp ()
-        Connect to SI
+        Connect to HS
     connect_to_archive_server ()
-        Connect to CA
+        Connect to AS
     close ()
-        Disconnect from SI
+        Disconnect from HS
     get_att_conf (attr)
-        Get attribute information from SI
+        Get attribute information from HS
     get_data_type (att_conf_data_type_id)
         Get attribute type
     get_archive (attr, date_from, date_to)
         Get the history of an attribute's persistence
     archiving_add (attrs)
-        Add attributes to CA
+        Add attributes to AS
     archiving_pause (attr)
         Pause attribute archiving
     archiving_remove (attr)
-        Remove attribute from CA
+        Remove attribute from AS
     archiving_start (attr, period, archive_period, archive_abs_change, archive_rel_change)
         Start Archiving Attribute
     archiving_status (attr)
@@ -142,7 +142,7 @@ class HDBPP():
 
     def connect(self):
         """
-        Connect to SI and CA
+        Connect to HS and AS
 
         Returns
         -------
@@ -160,7 +160,7 @@ class HDBPP():
 
     def connect_to_hdbpp(self):
         """
-        Connect to SI
+        Connect to HS
 
         Returns
         -------
@@ -178,7 +178,7 @@ class HDBPP():
 
     def connect_to_archive_server(self):
         """
-        Connect to CA
+        Connect to AS
 
         Returns
         -------
@@ -196,7 +196,7 @@ class HDBPP():
 
     def close(self):
         """
-        Close connection to SI.
+        Close connection to HS.
         """
 
         if self.cnx :
@@ -205,7 +205,7 @@ class HDBPP():
 
     def get_att_conf(self, attr):
         """
-        Get information about an attribute from SI. Required to take the archive.
+        Get information about an attribute from HS. Required to take the archive.
 
         Parameters
         ----------
@@ -215,7 +215,7 @@ class HDBPP():
         Returns
         -------
         arr
-            Array with information about the device with SI. Fields from att_conf table
+            Array with information about the device with HS. Fields from att_conf table
         None
             in case of error
         """
@@ -332,7 +332,7 @@ class HDBPP():
 
     def archiving_add(self, attrs):
         """
-        Add attributes to the CA. It must be done if it is not.
+        Add attributes to the AS. It must be done if it is not.
 
         Parameters
         ----------
@@ -383,7 +383,7 @@ class HDBPP():
 
     def archiving_remove(self, attr):
         """
-        Remove attribute from CA.
+        Remove attribute from AS.
 
         Parameters
         ----------
