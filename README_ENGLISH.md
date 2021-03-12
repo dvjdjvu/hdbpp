@@ -7,7 +7,7 @@ Working with Linux will be described here ([**TangoBox 9.3**](https://s2innovati
  - System architecture.
  - How to set up archiving.
 
-It took me ~ 2 weeks to understand the architecture and write my own scripts for ** python ** for this case.
+It took me ~ 2 weeks to understand the architecture and write my own scripts for **python** for this case.
 
 ## What is it for?
 Allows you to store the history of the readings of your equipment.
