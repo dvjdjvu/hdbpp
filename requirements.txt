@@ -1,4 +1,4 @@
+#distribute>=0.7.3
 mysql-connector>=2.2.9
-pytango>=9.3.2
-distribute>=0.7.3
 psycopg2-binary>=2.8.6
+pytango>=9.3.2
