@@ -1,11 +1,19 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import re
 import datetime
+import json
 import mysql.connector
-import json, tango
-from tango import Database, DbDevInfo, DeviceProxy, DeviceAttribute, AttributeProxy, EventType, DeviceData
+import psycopg2
+import re
+import tango
+from tango import AttributeProxy
+from tango import Database
+from tango import DbDevInfo
+from tango import DeviceAttribute
+from tango import DeviceData
+from tango import DeviceProxy
+from tango import EventType
 
 class HDBPP():
     """
@@ -17,18 +25,20 @@ class HDBPP():
 
     Attributes
     ----------
-     host: str
+    dbtype: str
+        type of database, "mysql" or "postgresql"
+    host: str
          history server base ip address (HS)
-     user: str
-         username to connect to HS
-     password: str
-         user password for connecting to HS
-     database: str
-         the name of the base in HS where the history is stored
-     archive_server_name: str
-         the name of the tango Device Server (Archive Server (AS)) that records history
-     server_default: str
-         the address of the server on which the archived Device Servers are running
+    user: str
+        username to connect to HS
+    password: str
+        user password for connecting to HS
+    database: str
+        the name of the base in HS where the history is stored
+    archive_server_name: str
+        the name of the tango Device Server (Archive Server (AS)) that records history
+    server_default: str
+        the address of the server on which the archived Device Servers are running
 
     Methods
     -------
@@ -76,26 +86,29 @@ class HDBPP():
         Retrieving archive parameters for an attribute.
     """
 
-    def __init__(self, host = "archiver-maria-db", user = "tango", password = "tango", database = "hdbpp", archive_server_name = "archiving/hdbpp/eventsubscriber.1", server_default = "tango://databaseds:10000"):
+    def __init__(self, dbtype="mysql", host="172.18.0.7", user="tango", password="tango", database="hdbpp", archive_server_name="archiving/hdbpp/eventsubscriber.1", server_default="tango://tangobox:10000"):
         """
         Class constructor. Set all the necessary attributes for the HDBPP object
 
-         Parameters
-         ----------
-         host: str
-             history server base ip address (SI)
-         user: str
-             username to connect to SI
-         password: str
-             user password for connecting to SI
-         database: str
-             the name of the base in SI where the history is stored
-         archive_server_name: str
-             the name of the tango Device Server (Archive Server (CA)) that records history
-         server_default: str
-             the address of the server on which the archived Device Servers are running
-         """
-
+        Parameters
+        ----------
+        dbtype: str
+            type of database, "mysql" or "postgresql"
+        host: str
+            history server base ip address (HS)
+        user: str
+            username to connect to HS
+        password: str
+            user password for connecting to HS
+        database: str
+            the name of the base in HS where the history is stored
+        archive_server_name: str
+            the name of the tango Device Server (Archive Server (AS)) that records history
+        server_default: str
+            the address of the server on which the archived Device Servers are running
+        """
+        
+        self.dbtype = dbtype
         self.cnx = None
         self.archive_server = None
 
@@ -105,7 +118,7 @@ class HDBPP():
         self.database = database
         self.archive_server_name = archive_server_name
 
-        # "tango: // tangobox: 10000" is the default server that our servers run on
+        # "tango://tangobox:10000" is the default server that our servers run on
         self.server_default = server_default
 
     def __del__(self):
@@ -113,7 +126,7 @@ class HDBPP():
         Class destructor. Close connections if you forgot to do this.
         """
 
-        if self.cnx :
+        if self.cnx:
             self.close()
 
     # If the attribute does not have the server on which it is running, add the default server before.
@@ -132,10 +145,10 @@ class HDBPP():
             the address and name of the attribute, for example tango://tangobox:10000/ECG/ecg/1/Lead
         """
 
-        if "tango://" in attr :
+        if "tango://" in attr:
             return attr
 
-        if (attr[0] != '/') :
+        if (attr[0] != '/'):
             attr = '/' + attr
 
         return self.server_default + attr
@@ -150,10 +163,10 @@ class HDBPP():
             True if successful, otherwise False
         """
 
-        if self.connect_to_hdbpp() == False :
+        if self.connect_to_hdbpp() == False:
             return False
 
-        if self.connect_to_archive_server() == False :
+        if self.connect_to_archive_server() == False:
             return False
 
         return True
@@ -167,13 +180,23 @@ class HDBPP():
         bool
             True if successful, otherwise False
         """
-
-        try:
-            self.cnx = mysql.connector.connect(host = self.host, user = self.user, password = self.password, database = self.database)
-        except mysql.connector.Error as err:
-            print("[error]: connect to {}: {}".format(self.database, err))
+        if self.dbtype == "mysql" :
+            try:
+                self.cnx = mysql.connector.connect(host=self.host, user=self.user, password=self.password, database=self.database)
+            except mysql.connector.Error as err:
+                print("[error]: connect to {}: {}".format(self.database, err))
+                return False
+        elif self.dbtype == "postgresql" :
+            try:
+                self.cnx = psycopg2.connect(dbname=self.database, user=self.user, password=self.password, host=self.host)
+            except OperationalError as err:
+                print("[error]: connect to {}: {}".format(self.database, err))
+                print_psycopg2_exception(err)
+                return False
+        else :
+            print("[error]: no supported db: {}".format(self.dbtype))
             return False
-
+            
         return True
 
     def connect_to_archive_server(self):
@@ -199,7 +222,7 @@ class HDBPP():
         Close connection to HS.
         """
 
-        if self.cnx :
+        if self.cnx:
             self.cnx.close()
             self.cnx = None
 
@@ -230,9 +253,9 @@ class HDBPP():
 
         result = cursor.fetchall()
 
-        if len(result) == 0 :
+        if len(result) == 0:
             return None
-        else :
+        else:
             return result[0]
 
     def get_data_type(self, att_conf_data_type_id):
@@ -259,12 +282,12 @@ class HDBPP():
 
         result = cursor.fetchall()
 
-        if len(result) == 0 :
+        if len(result) == 0:
             return None
-        else :
+        else:
             return result[0]
 
-    def get_archive(self, attr, date_from = None, date_to = None):
+    def get_archive(self, attr, date_from=None, date_to=None):
         """
         Get the history of saving an attribute.
 
@@ -296,17 +319,17 @@ class HDBPP():
 
         # If (date_from && date_to) == None, then we take data for all time
         # Time until which we take data
-        if date_to == None :
+        if date_to == None:
             # Default up to current time
             date_to = datetime.datetime.now()
 
         # Time from which we take data
-        if date_from == None :
+        if date_from == None:
             # By default, all data
             date_from = datetime.datetime(1, 1, 1, 0, 0, 0)
 
         result = hdbpp.get_att_conf(attr)
-        if result :
+        if result:
             att_conf_id = result[0]
             att_conf_data_type_id = result[2]
         else:
@@ -314,7 +337,7 @@ class HDBPP():
 
         # Get the data type, use it to find out in which table the history is stored.
         result = self.get_data_type(att_conf_data_type_id)
-        if result :
+        if result:
             table = "att_" + str(result[0])
         else:
             return None
@@ -325,9 +348,9 @@ class HDBPP():
         cursor.execute(sql)
 
         result = cursor.fetchall()
-        if len(result) == 0 :
+        if len(result) == 0:
             return None
-        else :
+        else:
             return result
 
     def archiving_add(self, attrs):
@@ -406,7 +429,7 @@ class HDBPP():
         except tango.DevFailed as df:
             return False
 
-    def archiving_start(self, attr, period = 0, archive_period = None, archive_abs_change = None, archive_rel_change = None):
+    def archiving_start(self, attr, period=0, archive_period=None, archive_abs_change=None, archive_rel_change=None):
         """
         Start archiving the attribute.
 
@@ -499,7 +522,7 @@ class HDBPP():
         except tango.DevFailed as df:
             return False
 
-    def archiving_set_strategy(self, attr, strategy = "ALWAYS"):
+    def archiving_set_strategy(self, attr, strategy="ALWAYS"):
         """
         Set the archiving strategy for the attribute.
 
@@ -625,7 +648,7 @@ class HDBPP():
 
         return False
 
-    def attr_set_period(self, attr, period = 0, archive_period = None, archive_abs_change = None, archive_rel_change = None):
+    def attr_set_period(self, attr, period=0, archive_period=None, archive_abs_change=None, archive_rel_change=None):
         """
         Setting the parameters for archiving the attribute.
 
@@ -645,10 +668,10 @@ class HDBPP():
 
         ap = AttributeProxy(attr)
 
-        if (period > 0) :
+        if (period > 0):
             ap.poll(period)
-        else :
-            if (ap.is_polled()) :
+        else:
+            if (ap.is_polled()):
                 ap.stop_poll(attr)
 
         attr_conf = ap.get_config()
@@ -690,12 +713,12 @@ class HDBPP():
         return arch_event
 
 if __name__ == '__main__':
-    hdbpp = HDBPP()
+    hdbpp = HDBPP(dbtype="mysql") # "mysql" or "postgresql"
 
-    if hdbpp.connect() == False :
+    if hdbpp.connect() == False:
         exit(0)
 
-    archive = hdbpp.get_archive('tango://databaseds:10000/PTS/RCUSCC/1/RCU_monitor_rate_RW')
+    archive = hdbpp.get_archive('tango://tangobox:10000/ECG/ecg/1/Lead')
     #if archive :
     #    for a in archive :
     #        print(a[4])
