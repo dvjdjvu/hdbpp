@@ -122,7 +122,7 @@ sudo python3.7 setup.py install
 from hdbpp import HDBPP
 
 if __name__ == '__main__':
-    hdbpp = HDBPP()
+    hdbpp = HDBPP("mysql") # "mysql" or "postgresql"
     
     # Подключиться к серверу архивации и к БД с архивами.
     if hdbpp.connect() == False :

@@ -125,7 +125,7 @@ Dependencies:
 from hdbpp import HDBPP
 
 if __name__ == '__main__':
-    hdbpp = HDBPP()
+    hdbpp = HDBPP("mysql") # "mysql" or "postgresql"
     # semantics:
     # __init__(self, host="172.18.0.7", user="root", password="tango", database="hdbpp", 
     #                     archive_server_name="archiving/hdbpp/eventsubscriber.1",
