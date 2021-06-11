@@ -5,8 +5,8 @@
 ### How to install:
 
 ```bash
-pip3.7 install -r requirements.txt
-python3.7 setup.py install
+pip3 install -r requirements.txt
+python3 setup.py install
 ```
 
 14.03.2021 Update:
