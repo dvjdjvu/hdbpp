@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 #encoding: UTF-8
 
 from setuptools import setup, find_packages
@@ -8,7 +8,7 @@ NAME = "hdbpp"
 DESCRIPTION = "TANGO HDB++ python"
 AUTHOR = "dvjdvju"
 AUTHOR_EMAIL = "djvu@inbox.ru"
-URL = "git@github.com:dvjdjvu/hdbpp.git"
+URL = ""
 VERSION = __import__(PACKAGE).__version__
 
 setup(
@@ -30,5 +30,5 @@ setup(
     zip_safe=False,
     include_package_data=True,
     python_requires='>=3.6',
-    install_request=["mysql-connector>=2.2.9", "pytango>=9.3.2", "distribute>=0.7.3"]
+    install_request=["mysql-connector>=2.2.9", "pytango>=9.3.2"]
 )
