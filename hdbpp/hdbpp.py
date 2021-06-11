@@ -45,7 +45,7 @@ class HDBPP():
     get_att_conf (attr)
         Get attribute information from HS
     replace_att_conf(self, data_type, attr)
-        Add attribute to SI. Required for archiving. Adds to hdbpp.att_conf
+        Add attribute to HS. Required for archiving. Adds to hdbpp.att_conf
     get_data_type_id(self, data_format, data_type, writable):
         Get numeric data type id by data_format, data_type and writable.
     get_data_type(att_conf_data_type_id)
