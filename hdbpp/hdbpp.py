@@ -3,6 +3,7 @@
 
 import re
 import datetime
+import psycopg2
 import mysql.connector
 import json, tango
 from tango import Database, DbDevInfo, DeviceProxy, DeviceAttribute, AttributeProxy, EventType, DeviceData
@@ -10,9 +11,11 @@ from tango import Database, DbDevInfo, DeviceProxy, DeviceAttribute, AttributePr
 class HDBPP():
     """
     The HDBPP class is used to manage the archive server and receive
-     archiving history of tango device attributes
-     Note:
-         The default settings are set to work on the TangoBox 9.3 distribution
+    archiving history of tango device attributes
+
+    Note:
+	The default settings are set to work on the TangoBox 9.3 distribution
+
     Attributes
     ----------
     dbtype: str
@@ -80,12 +83,11 @@ class HDBPP():
         Retrieving archive parameters for an attribute.
     """
     
-    def __init__(self, host="172.18.0.7", user="root", password="tango", database="hdbpp", 
-                        archive_server_name="archiving/hdbpp/eventsubscriber.1",
-                        server_default = "tango://tangobox:10000"):
+    def __init__(self, dbtype="mysql", host="172.18.0.7", user="tango", password="tango",
+			database="hdbpp", archive_server_name="archiving/hdbpp/eventsubscriber.1", 
+			server_default="tango://tangobox:10000"):
         """
         Class constructor. Set all the necessary attributes for the HDBPP object
-
         Parameters
         ----------
         dbtype: str
@@ -104,6 +106,7 @@ class HDBPP():
             the address of the server on which the archived Device Servers are running
         """
         
+	self.dbtype = dbtype
         self.cnx = None
         self.archive_server = None
         
@@ -176,12 +179,23 @@ class HDBPP():
             True if successful, otherwise False
         """
         
-        try:
-            self.cnx = mysql.connector.connect(host = self.host, user = self.user, password = self.password, database = self.database)
-        except mysql.connector.Error as err:
-            print("[error]: connect to {}: {}".format(self.database, err))
+        if self.dbtype == "mysql" :
+            try:
+                self.cnx = mysql.connector.connect(host=self.host, user=self.user, password=self.password, database=self.database)
+            except mysql.connector.Error as err:
+                print("[error]: connect to {}: {}".format(self.database, err))
+                return False
+        elif self.dbtype == "postgresql" :
+            try:
+                self.cnx = psycopg2.connect(dbname=self.database, user=self.user, password=self.password, host=self.host)
+            except OperationalError as err:
+                print("[error]: connect to {}: {}".format(self.database, err))
+                print_psycopg2_exception(err)
+                return False
+        else :
+            print("[error]: no supported db: {}".format(self.dbtype))
             return False
-
+            
         return True
     
     def connect_to_archive_server(self):
@@ -219,7 +233,6 @@ class HDBPP():
         ----------
         attr: str
             attribute name
-
         Returns
         -------
         arr
@@ -336,7 +349,6 @@ class HDBPP():
         ----------
         att_conf_data_type_id: int
             attribute data type
-
         Returns
         -------
         str
@@ -360,7 +372,6 @@ class HDBPP():
     def get_archive(self, attr, date_from = None, date_to = None):
         """
         Get the history of saving an attribute.
-
         Note:
             With default parameters takes history for all time
 
@@ -372,7 +383,6 @@ class HDBPP():
             date from which to take history
         date_to: datetime
             date by which to take history
-
         Returns
         -------
         array
@@ -773,7 +783,6 @@ class HDBPP():
         ----------
         attr: str
             attribute name
-
         Returns
         -------
         dict
